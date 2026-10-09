@@ -6,7 +6,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from quantrisk.backtest import run_backtest, turnover_cost
 from quantrisk.data import calculate_returns, clean_prices
+from quantrisk.metrics import performance_metrics
 from quantrisk.optimizers import portfolio_analytics, portfolio_weights
 
 
@@ -97,6 +99,59 @@ def test_hrp_block_correlation_returns_capped_simplex() -> None:
     weights = portfolio_weights(panel, "hrp", max_weight=0.4)
     assert weights.sum() == pytest.approx(1.0, abs=1e-8)
     assert weights.max() <= 0.4 + 1e-8
+
+
+def _backtest_config() -> dict:
+    return {"estimation_window": 5, "rebalance_freq": "monthly", "execution_lag_days": 1,
+            "cost_bps": 5, "slippage_bps": 2, "max_weight": 0.5, "initial_capital": 1.0}
+
+
+def test_turnover_and_cost_accounting() -> None:
+    turnover, cost = turnover_cost(np.array([0.5, 0.5]), np.array([0.5, 0.5]), 5, 2)
+    assert turnover == 0.0
+    assert cost == 0.0
+    turnover, cost = turnover_cost(np.array([1.0, 0.0]), np.array([0.0, 1.0]), 5, 2)
+    assert turnover == 2.0
+    assert cost == pytest.approx(2.0 * 7 / 1e4)
+
+
+def test_walk_forward_targets_do_not_use_activation_day_return() -> None:
+    index = pd.bdate_range("2024-01-02", periods=45)
+    base = pd.DataFrame({"A": 0.001, "B": 0.0005}, index=index)
+    shocked = base.copy()
+    jan_month_end = index[index.to_period("M") == pd.Period("2024-01", freq="M")][-1]
+    activation = index[index.get_loc(jan_month_end) + 1]
+    shocked.loc[activation, "A"] = -0.8
+    cfg = _backtest_config()
+    first = run_backtest(base, cfg, strategies=("inverse_vol",))["weights"]
+    second = run_backtest(shocked, cfg, strategies=("inverse_vol",))["weights"]
+    target_date = first.loc[first["weight_type"] == "target", "date"].min()
+    assert target_date == activation
+    lhs = first[(first.date == activation) & (first.weight_type == "target")].set_index("asset").weight
+    rhs = second[(second.date == activation) & (second.weight_type == "target")].set_index("asset").weight
+    pd.testing.assert_series_equal(lhs, rhs)
+
+
+def test_weights_drift_after_trade_and_nav_compounds_net_returns() -> None:
+    index = pd.bdate_range("2024-01-02", periods=30)
+    returns = pd.DataFrame(0.0, index=index, columns=["A", "B"])
+    jan_end_pos = int(np.flatnonzero(index.to_period("M") == pd.Period("2024-01", freq="M"))[-1])
+    activation_pos = jan_end_pos + 1
+    returns.iloc[activation_pos + 1, 0] = 0.10
+    result = run_backtest(returns, _backtest_config(), strategies=("equal_weight",))
+    rows = result["weights"]
+    after_move = rows[(rows.date == index[activation_pos + 1]) & (rows.weight_type == "drifted")].set_index("asset").weight
+    assert after_move["A"] == pytest.approx(0.5238095238)
+    net = result["returns_net"]["equal_weight"]
+    nav = result["nav"]["equal_weight"]
+    np.testing.assert_allclose(nav.to_numpy(), np.cumprod(1.0 + net.to_numpy()))
+
+
+def test_metrics_on_known_daily_series() -> None:
+    daily = pd.Series([0.01, -0.02, 0.01, 0.0], index=pd.bdate_range("2020-01-01", periods=4))
+    result = performance_metrics(daily, annualization=4)
+    assert result["max_drawdown"] == pytest.approx(-0.02)
+    assert result["volatility"] == pytest.approx(daily.std(ddof=1) * 2)
 
 
 def test_portfolio_analytics_effective_count_and_classes() -> None:

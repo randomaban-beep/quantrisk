@@ -10,8 +10,10 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
+from quantrisk.backtest import run_backtest
 from quantrisk.data import MissingTickersError, calculate_returns, download_prices, load_risk_free
 from quantrisk.db import store_frame
+from quantrisk.metrics import performance_metrics
 from quantrisk.optimizers import portfolio_weights
 
 
@@ -70,15 +72,40 @@ def main() -> None:
     elif args.stage == "portfolios":
         returns = pd.read_parquet("data/processed/returns.parquet")
         config = yaml.safe_load(Path("config/backtest.yaml").read_text(encoding="utf-8"))
-        window = min(len(returns), 252 if args.dev else int(config["estimation_window"]))
-        history = returns.tail(window)
-        strategies = ("equal_weight", "sixty_forty", "inverse_vol", "min_variance", "max_sharpe", "risk_parity", "hrp")
-        rows = [portfolio_weights(history, strategy, float(config["max_weight"])).rename(strategy) for strategy in strategies]
-        targets = pd.concat(rows, axis=1)
-        targets.index.name = "asset"
         Path("results").mkdir(exist_ok=True)
+        if args.dev:
+            config["estimation_window"] = min(252, len(returns) // 2)
+            returns = returns.tail(756).iloc[:, :5]
+        rf_path = Path("data/raw/rf.parquet")
+        rf = pd.read_parquet(rf_path).iloc[:, 0] if rf_path.exists() else None
+        outputs = run_backtest(returns, config, rf)
+        for name, frame in outputs.items():
+            if name == "weights":
+                frame.to_parquet("results/weights.parquet", index=False)
+            elif name in {"turnover", "costs"}:
+                frame.to_csv(f"results/{name}.csv", index_label="date")
+            else:
+                frame.to_parquet(f"results/{name}.parquet")
+        outputs["nav"].to_parquet("results/nav.parquet")
+        metric_rows = {}
+        for strategy in outputs["returns_net"]:
+            trade_dates = outputs["weights"].loc[
+                (outputs["weights"]["strategy"] == strategy)
+                & (outputs["weights"]["weight_type"] == "target"), "date"
+            ]
+            first_active = trade_dates.min()
+            active_index = outputs["returns_net"].index > first_active
+            metric_rows[strategy] = performance_metrics(
+                outputs["returns_net"].loc[active_index, strategy], rf
+            )
+        metrics = pd.DataFrame(metric_rows).T
+        metrics.index.name = "strategy"
+        metrics.to_csv("results/metrics_summary.csv")
+        latest_window = returns.tail(int(config["estimation_window"]))
+        targets = pd.concat([portfolio_weights(latest_window, strategy, float(config["max_weight"])).rename(strategy) for strategy in ("equal_weight", "sixty_forty", "inverse_vol", "min_variance", "max_sharpe", "risk_parity", "hrp")], axis=1)
+        targets.index.name = "asset"
         targets.to_csv("results/portfolio_weights_latest.csv")
-        logging.getLogger(__name__).info("Saved target weights for %d strategies", len(strategies))
+        logging.getLogger(__name__).info("Backtest saved for %d strategies", len(outputs["returns_net"].columns))
     else:
         logging.getLogger(__name__).info("Stage '%s' is not implemented yet.", args.stage)
 

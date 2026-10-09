@@ -82,7 +82,9 @@ def portfolio_weights(
     assets = list(window.columns)
     n_assets = len(assets)
     cap = max(max_weight, 1.0 / n_assets)
-    vol = window.std().replace(0.0, np.nan).fillna(window.std().mean()).to_numpy()
+    vol_series = window.std().where(window.std() > 1e-12)
+    fallback_vol = vol_series.mean()
+    vol = vol_series.fillna(fallback_vol if pd.notna(fallback_vol) else 1.0).to_numpy()
     inv_vol = _cap_normalize(1.0 / vol, cap)
     if strategy == "equal_weight":
         weights = _cap_normalize(np.ones(n_assets), cap)
