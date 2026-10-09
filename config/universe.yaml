@@ -1,0 +1,17 @@
+start: "2007-06-01"
+tickers:
+  SPY: us_equity
+  QQQ: us_equity
+  IWM: us_equity
+  EFA: international_equity
+  EEM: international_equity
+  IEF: treasuries
+  TLT: treasuries
+  LQD: investment_grade_credit
+  HYG: high_yield_credit
+  VNQ: real_estate
+  GLD: gold
+  DBC: commodities
+risk_free_ticker: "^IRX"
+annualization: 252
+seed: 42

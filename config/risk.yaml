@@ -1,0 +1,4 @@
+window: 500
+confidence_levels: [0.95, 0.99]
+ewma_lambda: 0.94
+significance: 0.05
