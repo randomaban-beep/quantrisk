@@ -12,6 +12,7 @@ import yaml
 
 from quantrisk.data import MissingTickersError, calculate_returns, download_prices, load_risk_free
 from quantrisk.db import store_frame
+from quantrisk.optimizers import portfolio_weights
 
 
 def main() -> None:
@@ -66,6 +67,18 @@ def main() -> None:
         Path("results").mkdir(exist_ok=True)
         summary.to_csv("results/data_quality.csv", index=False)
         logging.getLogger(__name__).info("Saved %d rows for %d assets", len(prices), len(prices.columns))
+    elif args.stage == "portfolios":
+        returns = pd.read_parquet("data/processed/returns.parquet")
+        config = yaml.safe_load(Path("config/backtest.yaml").read_text(encoding="utf-8"))
+        window = min(len(returns), 252 if args.dev else int(config["estimation_window"]))
+        history = returns.tail(window)
+        strategies = ("equal_weight", "sixty_forty", "inverse_vol", "min_variance", "max_sharpe", "risk_parity", "hrp")
+        rows = [portfolio_weights(history, strategy, float(config["max_weight"])).rename(strategy) for strategy in strategies]
+        targets = pd.concat(rows, axis=1)
+        targets.index.name = "asset"
+        Path("results").mkdir(exist_ok=True)
+        targets.to_csv("results/portfolio_weights_latest.csv")
+        logging.getLogger(__name__).info("Saved target weights for %d strategies", len(strategies))
     else:
         logging.getLogger(__name__).info("Stage '%s' is not implemented yet.", args.stage)
 

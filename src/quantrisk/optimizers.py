@@ -27,8 +27,11 @@ def _cap_normalize(weights: np.ndarray, cap: float) -> np.ndarray:
             return result
         excess = (result[over] - cap).sum()
         result[over] = cap
-        under = ~over
-        result[under] += excess * result[under] / result[under].sum()
+        available = result < cap - 1e-12
+        capacity = cap - result[available]
+        if not available.any():
+            raise ValueError("No capacity remains for weight redistribution")
+        result[available] += excess * capacity / capacity.sum()
     return result / result.sum()
 
 
@@ -103,8 +106,9 @@ def portfolio_weights(
             objective = lambda w: -float((w @ mu - risk_free) / np.sqrt(max(w @ cov @ w, 1e-15)))
         elif strategy == "risk_parity":
             def objective(w: np.ndarray) -> float:
-                rc = w * (cov @ w)
-                return float(np.square(rc - rc.mean()).sum())
+                variance_contrib = np.maximum(w * (cov @ w), 1e-15)
+                rc = variance_contrib / variance_contrib.sum()
+                return float(np.square(rc - 1.0 / n_assets).sum())
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
         result = minimize(
@@ -123,3 +127,31 @@ def risk_contributions(weights: pd.Series, cov: pd.DataFrame) -> pd.Series:
     w = weights.reindex(cov.index).to_numpy()
     variance = float(w @ cov.to_numpy() @ w)
     return pd.Series(w * (cov.to_numpy() @ w) / np.sqrt(variance), index=cov.index)
+
+
+def portfolio_analytics(
+    weights: pd.Series,
+    cov: pd.DataFrame,
+    asset_classes: dict[str, str] | None = None,
+) -> dict[str, float | pd.Series]:
+    """Summarize portfolio risk, diversification, concentration, and classes."""
+    aligned = weights.reindex(cov.index).fillna(0.0)
+    sigma = cov.reindex(index=aligned.index, columns=aligned.index).to_numpy()
+    w = aligned.to_numpy()
+    asset_vol = np.sqrt(np.maximum(np.diag(sigma), 0.0))
+    port_vol = float(np.sqrt(max(w @ sigma @ w, 0.0)))
+    contributions = risk_contributions(aligned, cov)
+    normalized_rc = contributions.abs() / max(float(contributions.abs().sum()), 1e-15)
+    effective_bets = float(np.exp(-(normalized_rc * np.log(normalized_rc.clip(lower=1e-15))).sum()))
+    classes = asset_classes or {asset: asset for asset in aligned.index}
+    class_weights = aligned.groupby([classes.get(asset, "other") for asset in aligned.index]).sum()
+    class_risk = contributions.groupby([classes.get(asset, "other") for asset in contributions.index]).sum()
+    return {
+        "risk_contributions": contributions,
+        "diversification_ratio": float(w @ asset_vol / max(port_vol, 1e-15)),
+        "effective_assets": float(1.0 / np.square(w).sum()),
+        "effective_bets": effective_bets,
+        "hhi": float(np.square(w).sum()),
+        "asset_class_weights": class_weights,
+        "asset_class_risk": class_risk,
+    }

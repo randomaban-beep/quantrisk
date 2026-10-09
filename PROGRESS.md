@@ -16,9 +16,12 @@
 - Stage 1: IWM recovered from Yahoo within the two-attempt cap; Stooq is implemented as its fallback. No IJR swap was needed. Full universe data currently contains 12 tickers, 4,871 price rows, no missing values, returns, rf table, and DuckDB tables.
 
 ## Known issues
-- Stage 2 is not complete: estimators and core allocators exist, but analytics helpers, specified optimizer tests, and validation remain.
-- Test suite passes (3 tests) and Ruff is clean in `.venv312`; Stage 2 coverage is still pending.
+- Stage 2 implementation is committed with the risk-parity limitation below; it remains unchecked pending that criterion.
+- Stage 2 risk-parity criterion remains unresolved after the allowed two tuning attempts: the deterministic fixture's max-to-min risk-contribution spread is about 1.36%, exceeding the 1% criterion. The full suite therefore has one known failure; the other 9 tests pass and Ruff is clean.
+- Stage 2 commit contains all seven target weight vectors from the real 252-day window; standalone stage output does not constitute a walk-forward performance result.
 - Performance backtests and reports do not exist yet; market data does not imply strategy results.
+- Stage 2 in progress: optimizer analytics and tests are being added after Stage 1 push `082494e`.
+- Stage 2: risk parity missed the strict 1% risk-contribution spread in its deterministic fixture after two implementation attempts (observed spread about 1.36%); logged per the two-fix-attempt limit. All other optimizer property tests passed and the latest-window run completed.
 
 ## Next exact step
-Implement the remaining Stage 2 portfolio analytics and optimizer tests, then run tests/lint and commit/push.
+Implement the Stage 3 walk-forward backtest and core performance metrics, starting with no-look-ahead alignment.
