@@ -1,0 +1,36 @@
+strategy,scenario,classification,portfolio_pnl,top_assets
+equal_weight,Equity crash,"illustrative assumption, not a forecast",-0.19333333333333333,QQQ:-0.0333;IWM:-0.0292;EEM:-0.0292
+equal_weight,Rates +200bp,"illustrative assumption, not a forecast",-0.025,TLT:-0.0167;IEF:-0.0083;SPY:0.0000
+equal_weight,Stagflation,"illustrative assumption, not a forecast",-0.13916666666666666,QQQ:-0.0208;EEM:-0.0208;HYG:-0.0208
+equal_weight,Credit spread blowout,"illustrative assumption, not a forecast",-0.0375,HYG:-0.0250;LQD:-0.0125;SPY:0.0000
+equal_weight,Flight to quality,"illustrative assumption, not a forecast",-0.07749999999999999,EEM:-0.0167;QQQ:-0.0150;IWM:-0.0150
+sixty_forty,Equity crash,"illustrative assumption, not a forecast",-0.14140000000000003,SPY:-0.1200;IEF:0.0200;QQQ:-0.0080
+sixty_forty,Rates +200bp,"illustrative assumption, not a forecast",-0.044000000000000004,IEF:-0.0400;TLT:-0.0040;SPY:0.0000
+sixty_forty,Stagflation,"illustrative assumption, not a forecast",-0.15500000000000003,SPY:-0.0800;IEF:-0.0480;QQQ:-0.0050
+sixty_forty,Credit spread blowout,"illustrative assumption, not a forecast",-0.009,HYG:-0.0060;LQD:-0.0030;SPY:0.0000
+sixty_forty,Flight to quality,"illustrative assumption, not a forecast",-0.0528,SPY:-0.0600;IEF:0.0240;EEM:-0.0040
+inverse_vol,Equity crash,"illustrative assumption, not a forecast",-0.15691297381962707,HYG:-0.0537;SPY:-0.0194;LQD:-0.0184
+inverse_vol,Rates +200bp,"illustrative assumption, not a forecast",-0.035336480228234796,TLT:-0.0179;IEF:-0.0174;SPY:0.0000
+inverse_vol,Stagflation,"illustrative assumption, not a forecast",-0.16646154983098033,HYG:-0.0537;LQD:-0.0230;IEF:-0.0209
+inverse_vol,Credit spread blowout,"illustrative assumption, not a forecast",-0.08752713513805875,HYG:-0.0645;LQD:-0.0230;SPY:0.0000
+inverse_vol,Flight to quality,"illustrative assumption, not a forecast",-0.051808062677413697,HYG:-0.0258;TLT:0.0108;IEF:0.0104
+min_variance,Equity crash,"illustrative assumption, not a forecast",-0.1117162189638744,HYG:-0.1000;IEF:0.0187;DBC:-0.0157
+min_variance,Rates +200bp,"illustrative assumption, not a forecast",-0.03730805194482632,IEF:-0.0373;SPY:0.0000;QQQ:0.0000
+min_variance,Stagflation,"illustrative assumption, not a forecast",-0.13694215414883026,HYG:-0.1000;IEF:-0.0448;DBC:0.0262
+min_variance,Credit spread blowout,"illustrative assumption, not a forecast",-0.13833838573236484,HYG:-0.1200;LQD:-0.0183;SPY:0.0000
+min_variance,Flight to quality,"illustrative assumption, not a forecast",-0.033636408302386026,HYG:-0.0480;IEF:0.0224;DBC:-0.0105
+max_sharpe,Equity crash,"illustrative assumption, not a forecast",-0.15173612519225224,HYG:-0.1000;DBC:-0.0289;SPY:-0.0275
+max_sharpe,Rates +200bp,"illustrative assumption, not a forecast",-0.028210043880696947,IEF:-0.0282;SPY:0.0000;QQQ:0.0000
+max_sharpe,Stagflation,"illustrative assumption, not a forecast",-0.11064144244005186,HYG:-0.1000;DBC:0.0481;IEF:-0.0339
+max_sharpe,Credit spread blowout,"illustrative assumption, not a forecast",-0.12054968608791877,HYG:-0.1200;LQD:-0.0005;SPY:0.0000
+max_sharpe,Flight to quality,"illustrative assumption, not a forecast",-0.06851289764429312,HYG:-0.0480;DBC:-0.0192;IEF:0.0169
+risk_parity,Equity crash,"illustrative assumption, not a forecast",-0.14828211479855097,HYG:-0.0447;VNQ:-0.0260;SPY:-0.0185
+risk_parity,Rates +200bp,"illustrative assumption, not a forecast",-0.03972772559707539,TLT:-0.0217;IEF:-0.0180;SPY:0.0000
+risk_parity,Stagflation,"illustrative assumption, not a forecast",-0.1650119537877885,HYG:-0.0447;TLT:-0.0217;LQD:-0.0217
+risk_parity,Credit spread blowout,"illustrative assumption, not a forecast",-0.07523797844395404,HYG:-0.0536;LQD:-0.0217;SPY:0.0000
+risk_parity,Flight to quality,"illustrative assumption, not a forecast",-0.04579754885118754,HYG:-0.0214;VNQ:-0.0130;TLT:0.0130
+hrp,Equity crash,"illustrative assumption, not a forecast",-0.12211712046354549,LQD:-0.0476;HYG:-0.0380;VNQ:-0.0190
+hrp,Rates +200bp,"illustrative assumption, not a forecast",-0.029755558544041945,IEF:-0.0194;TLT:-0.0103;SPY:0.0000
+hrp,Stagflation,"illustrative assumption, not a forecast",-0.1456188879676826,LQD:-0.0595;HYG:-0.0380;IEF:-0.0233
+hrp,Credit spread blowout,"illustrative assumption, not a forecast",-0.1050495037045018,LQD:-0.0595;HYG:-0.0455;SPY:0.0000
+hrp,Flight to quality,"illustrative assumption, not a forecast",-0.01865706833186756,HYG:-0.0182;IEF:0.0117;VNQ:-0.0095

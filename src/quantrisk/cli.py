@@ -15,6 +15,9 @@ from quantrisk.data import MissingTickersError, calculate_returns, download_pric
 from quantrisk.db import store_frame
 from quantrisk.metrics import performance_metrics
 from quantrisk.optimizers import portfolio_weights
+from quantrisk.sensitivity import run_sensitivity
+from quantrisk.stats import stationary_bootstrap
+from quantrisk.stress import correlation_stress, historical_stress, hypothetical_stress
 from quantrisk.var_backtests import summarize_var, traffic_light
 from quantrisk.var_models import component_var, rolling_forecasts
 
@@ -148,6 +151,70 @@ def main() -> None:
                 components.append(part)
             pd.concat(components, ignore_index=True).to_csv("results/component_risk_latest.csv", index=False)
             logging.getLogger(__name__).info("Saved VaR forecasts for %d strategies", len(forecast_frames))
+    elif args.stage == "stress":
+        returns = pd.read_parquet("data/processed/returns.parquet")
+        strategy_returns = pd.read_parquet("results/returns_net.parquet")
+        config = yaml.safe_load(Path("config/backtest.yaml").read_text(encoding="utf-8"))
+        stress_config = yaml.safe_load(Path("config/stress.yaml").read_text(encoding="utf-8"))
+        weights_by_strategy = {
+            strategy: portfolio_weights(returns.tail(int(config["estimation_window"])), strategy,
+                                        float(config["max_weight"]), covariance_method=config.get("covariance_method", "ledoit_wolf"))
+            for strategy in ("equal_weight", "sixty_forty", "inverse_vol", "min_variance", "max_sharpe", "risk_parity", "hrp")
+        }
+        historical, hypothetical, correlations = [], [], []
+        for strategy, weights in weights_by_strategy.items():
+            hist = historical_stress(weights, returns, strategy_returns.get(strategy))
+            hist.insert(0, "strategy", strategy)
+            historical.append(hist)
+            hypo = hypothetical_stress(weights, stress_config["hypothetical"])
+            hypo.insert(0, "strategy", strategy)
+            hypothetical.append(hypo)
+            corr = correlation_stress(weights, returns.tail(int(config["estimation_window"])), tuple(stress_config["correlation_levels"]))
+            corr.insert(0, "strategy", strategy)
+            correlations.append(corr)
+        pd.concat(historical, ignore_index=True).to_csv("results/stress_historical.csv", index=False)
+        pd.concat(hypothetical, ignore_index=True).to_csv("results/stress_hypothetical.csv", index=False)
+        pd.concat(correlations, ignore_index=True).to_csv("results/stress_correlation.csv", index=False)
+        latest = pd.DataFrame(weights_by_strategy)
+        latest.index.name = "asset"
+        latest.to_csv("results/portfolio_weights_latest.csv")
+        returns_net = strategy_returns
+        active_returns = returns_net.copy()
+        weight_rows = pd.read_parquet("results/weights.parquet")
+        for strategy in active_returns:
+            trade_dates = weight_rows.loc[
+                (weight_rows.strategy == strategy) & (weight_rows.weight_type == "target"), "date"
+            ]
+            if len(trade_dates):
+                active_returns.loc[active_returns.index <= trade_dates.min(), strategy] = float("nan")
+        rf_path = Path("data/raw/rf.parquet")
+        rf = pd.read_parquet(rf_path).iloc[:, 0] if rf_path.exists() else pd.Series(0.0, index=active_returns.index)
+        excess = active_returns.sub(rf.reindex(active_returns.index).fillna(0.0), axis=0)
+        bootstrap, paired = stationary_bootstrap(excess, resamples=5000, block_length=21, seed=42)
+        bootstrap.to_csv("results/sharpe_bootstrap.csv", index=False)
+        paired.to_csv("results/sharpe_paired_tests.csv", index=False)
+        subperiod_rows = []
+        periods = {"2008-09 crisis": ("2008-01-01", "2009-12-31"), "2010-2019 expansion": ("2010-01-01", "2019-12-31"),
+                   "2020 COVID": ("2020-01-01", "2020-12-31"), "2022 rate shock": ("2022-01-01", "2022-12-31"),
+                   "2023-present": ("2023-01-01", date.today().isoformat())}
+        for strategy in active_returns:
+            series_active = active_returns[strategy].dropna()
+            for year, series in series_active.groupby(series_active.index.year):
+                subperiod_rows.append({"strategy": strategy, "period": str(year), "return": float((1.0 + series).prod() - 1.0)})
+            for label, (start, end) in periods.items():
+                series = series_active.loc[start:end]
+                if len(series):
+                    subperiod_rows.append({"strategy": strategy, "period": label, "return": float((1.0 + series).prod() - 1.0)})
+        pd.DataFrame(subperiod_rows).to_csv("results/subperiods.csv", index=False)
+        logging.getLogger(__name__).info("Saved stress, bootstrap, and subperiod analysis")
+    elif args.stage == "sensitivity":
+        returns = pd.read_parquet("data/processed/returns.parquet")
+        config = yaml.safe_load(Path("config/backtest.yaml").read_text(encoding="utf-8"))
+        if args.dev:
+            returns = returns.tail(756).iloc[:, :5]
+            config["estimation_window"] = min(252, len(returns) // 2)
+        run_sensitivity(returns, config).to_csv("results/sensitivity.csv", index=False)
+        logging.getLogger(__name__).info("Saved cached sensitivity runs")
     else:
         logging.getLogger(__name__).info("Stage '%s' is not implemented yet.", args.stage)
 

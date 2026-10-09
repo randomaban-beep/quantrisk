@@ -1,0 +1,13 @@
+strategy,benchmark,sharpe_difference_p,statistically_significant_5pct,conclusion
+sixty_forty,equal_weight,1.0,False,not statistically significant
+inverse_vol,equal_weight,0.2024,False,not statistically significant
+min_variance,equal_weight,0.6648,False,not statistically significant
+max_sharpe,equal_weight,0.7024,False,not statistically significant
+risk_parity,equal_weight,0.2544,False,not statistically significant
+hrp,equal_weight,0.4972,False,not statistically significant
+equal_weight,sixty_forty,1.0,False,not statistically significant
+inverse_vol,sixty_forty,0.2024,False,not statistically significant
+min_variance,sixty_forty,0.6648,False,not statistically significant
+max_sharpe,sixty_forty,0.7024,False,not statistically significant
+risk_parity,sixty_forty,0.2544,False,not statistically significant
+hrp,sixty_forty,0.4972,False,not statistically significant

@@ -53,6 +53,7 @@ def run_backtest(
                 returns.iloc[signal_pos - window + 1 : signal_pos + 1],
                 strategy,
                 max_weight=max_weight,
+                covariance_method=str(config.get("covariance_method", "ledoit_wolf")),
             )
             pending[activation_pos] = target
         strategy_net = []

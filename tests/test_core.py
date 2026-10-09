@@ -10,6 +10,8 @@ from quantrisk.backtest import run_backtest, turnover_cost
 from quantrisk.data import calculate_returns, clean_prices
 from quantrisk.metrics import performance_metrics
 from quantrisk.optimizers import portfolio_analytics, portfolio_weights
+from quantrisk.stats import stationary_bootstrap, stationary_indices
+from quantrisk.stress import correlation_stress, hypothetical_stress
 from quantrisk.var_backtests import christoffersen_independence, kupiec_pof
 from quantrisk.var_models import component_var, forecast_window, rolling_forecasts
 
@@ -209,6 +211,35 @@ def test_var_forecast_does_not_use_realized_day_return() -> None:
     left = first[first.date == forecast_date].drop(columns="realized").reset_index(drop=True)
     right = second[second.date == forecast_date].drop(columns="realized").reset_index(drop=True)
     pd.testing.assert_frame_equal(left, right)
+
+
+def test_hypothetical_stress_equals_weighted_shock() -> None:
+    weights = pd.Series({"A": 0.6, "B": 0.4})
+    shocks = {"crash": {"A": -0.2, "B": 0.1}}
+    result = hypothetical_stress(weights, shocks)
+    assert result.loc[0, "portfolio_pnl"] == pytest.approx(-0.08)
+
+
+def test_correlation_stress_one_equals_weighted_vol_sum() -> None:
+    rng = np.random.default_rng(42)
+    returns = pd.DataFrame(rng.normal(size=(1000, 3)) * [0.01, 0.02, 0.03], columns=list("ABC"))
+    weights = pd.Series([0.2, 0.3, 0.5], index=returns.columns)
+    result = correlation_stress(weights, returns, (1.0,))
+    expected = float((weights * returns.std()).sum())
+    assert result.iloc[-1].portfolio_volatility == pytest.approx(expected, rel=1e-10)
+
+
+def test_stationary_bootstrap_is_reproducible_and_reports_intervals() -> None:
+    rng = np.random.default_rng(42)
+    returns = pd.DataFrame({"equal_weight": rng.normal(0.0003, 0.01, 100),
+                            "sixty_forty": rng.normal(0.0002, 0.008, 100)})
+    first = stationary_indices(20, 50, 5, seed=42)
+    second = stationary_indices(20, 50, 5, seed=42)
+    np.testing.assert_array_equal(first, second)
+    summary, paired = stationary_bootstrap(returns, resamples=50, block_length=5, seed=42)
+    assert len(summary) == 2
+    assert len(paired) == 2
+    assert summary.sharpe_ci_low.notna().all()
 
 
 def test_portfolio_analytics_effective_count_and_classes() -> None:
