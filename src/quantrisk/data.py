@@ -5,10 +5,19 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
+from urllib.error import URLError
 
 import pandas as pd
 
 LOGGER = logging.getLogger(__name__)
+
+
+class MissingTickersError(RuntimeError):
+    """Raised when one or more requested symbols have no provider data."""
+
+    def __init__(self, tickers: list[str]) -> None:
+        self.tickers = tickers
+        super().__init__(f"No real market data available for: {', '.join(tickers)}")
 
 
 def clean_prices(prices: pd.DataFrame) -> pd.DataFrame:
@@ -30,30 +39,57 @@ def download_prices(
 ) -> pd.DataFrame:
     """Download adjusted close data with retries and a Stooq fallback."""
     target = Path(cache_path)
-    if target.exists():
-        return pd.read_parquet(target)
+    cached = pd.read_parquet(target) if target.exists() else pd.DataFrame()
+    missing = [ticker for ticker in tickers if ticker not in cached.columns]
+    if not missing:
+        return cached.reindex(columns=tickers)
     import yfinance as yf
 
-    prices = None
-    for attempt in range(3):
-        try:
-            raw = yf.download(tickers, start=start, end=end, auto_adjust=True, progress=False)
-            prices = raw["Close"] if isinstance(raw.columns, pd.MultiIndex) else raw[["Close"]]
-            break
-        except Exception as exc:  # noqa: BLE001  # Provider exceptions are not consistent.
-            LOGGER.warning("Yahoo download attempt %d failed: %s", attempt + 1, exc)
-            if attempt < 2:
-                time.sleep(2**attempt)
-    if prices is None or prices.empty:
-        try:
-            from pandas_datareader import data as web
-
-            prices = pd.concat({ticker: web.DataReader(ticker, "stooq", start, end)["Close"] for ticker in tickers}, axis=1)
-            prices = prices.sort_index()
-        except Exception as exc:
-            raise RuntimeError("Yahoo and Stooq data downloads both failed") from exc
-    if len(tickers) == 1 and isinstance(prices, pd.DataFrame) and len(prices.columns) == 1:
-        prices.columns = tickers
+    fetched: dict[str, pd.Series] = {}
+    # IWM has a specific two-attempt Yahoo retry cap before the Stooq fallback.
+    yahoo_tickers = [ticker for ticker in missing if ticker != "IWM"]
+    if yahoo_tickers:
+        for attempt in range(3):
+            try:
+                raw = yf.download(yahoo_tickers, start=start, end=end, auto_adjust=True, progress=False)
+                closes = raw["Close"] if isinstance(raw.columns, pd.MultiIndex) else raw[["Close"]]
+                if isinstance(closes, pd.Series):
+                    closes = closes.to_frame(name=yahoo_tickers[0])
+                fetched.update({ticker: closes[ticker].dropna() for ticker in yahoo_tickers if ticker in closes})
+                break
+            except Exception as exc:  # noqa: BLE001  # Provider exceptions are not consistent.
+                LOGGER.warning("Yahoo batch attempt %d failed: %s", attempt + 1, exc)
+                if attempt < 2:
+                    time.sleep(2**attempt)
+    if "IWM" in missing:
+        for attempt in range(2):
+            try:
+                raw = yf.download("IWM", start=start, end=end, auto_adjust=True, progress=False)
+                close = raw["Close"]
+                if isinstance(close, pd.DataFrame):
+                    close = close.iloc[:, 0]
+                fetched["IWM"] = close.dropna()
+                if not fetched["IWM"].empty:
+                    break
+            except Exception as exc:  # noqa: BLE001  # Provider exceptions are not consistent.
+                LOGGER.warning("Yahoo IWM attempt %d failed: %s", attempt + 1, exc)
+            if attempt == 0:
+                time.sleep(2)
+        if "IWM" not in fetched or fetched["IWM"].empty:
+            try:
+                url = f"https://stooq.com/q/d/l/?s=iwm.us&i=d&d1={start.replace('-', '')}&d2={(end or pd.Timestamp.today().date().isoformat()).replace('-', '')}"
+                stooq = pd.read_csv(url, parse_dates=["Date"], index_col="Date")
+                fetched["IWM"] = stooq["Close"].dropna()
+                LOGGER.info("Loaded IWM from Stooq fallback")
+            except (OSError, URLError, ValueError, KeyError) as exc:
+                LOGGER.warning("Stooq fallback failed for IWM: %s", exc)
+    if "IWM" in fetched and fetched["IWM"].empty:
+        del fetched["IWM"]
+    downloaded = pd.DataFrame(fetched)
+    prices = pd.concat([cached, downloaded], axis=1).loc[:, lambda frame: ~frame.columns.duplicated(keep="last")]
+    unavailable = [ticker for ticker in tickers if ticker not in prices.columns or prices[ticker].dropna().empty]
+    if unavailable:
+        raise MissingTickersError(unavailable)
     clean = clean_prices(prices.reindex(columns=tickers))
     target.parent.mkdir(parents=True, exist_ok=True)
     clean.to_parquet(target)

@@ -1,5 +1,7 @@
 """Deterministic, network-free tests for portfolio primitives."""
 
+from unittest.mock import patch
+
 import numpy as np
 import pandas as pd
 
@@ -19,3 +21,14 @@ def test_returns_are_simple_daily_returns() -> None:
     prices = pd.DataFrame({"A": [100.0, 110.0, 99.0]})
     returns = calculate_returns(prices)
     np.testing.assert_allclose(returns["A"], [0.1, -0.1])
+
+
+def test_cached_prices_do_not_download(tmp_path) -> None:
+    cached = pd.DataFrame({"SPY": [100.0, 101.0]}, index=pd.date_range("2024-01-01", periods=2))
+    path = tmp_path / "prices.parquet"
+    cached.to_parquet(path)
+    with patch("yfinance.download", side_effect=AssertionError("network called")):
+        from quantrisk.data import download_prices
+
+        actual = download_prices(["SPY"], "2024-01-01", cache_path=path)
+    pd.testing.assert_frame_equal(actual, cached, check_freq=False)
