@@ -4,6 +4,14 @@ from __future__ import annotations
 
 import argparse
 import logging
+from datetime import date
+from pathlib import Path
+
+import pandas as pd
+import yaml
+
+from quantrisk.data import calculate_returns, download_prices, load_risk_free
+from quantrisk.db import store_frame
 
 
 def main() -> None:
@@ -19,7 +27,31 @@ def main() -> None:
     run.add_argument("--dev", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
-    logging.getLogger(__name__).info("Stage '%s' is not implemented yet.", args.stage)
+    if args.stage == "data":
+        config = yaml.safe_load(Path("config/universe.yaml").read_text(encoding="utf-8"))
+        tickers = list(config["tickers"])
+        if args.dev:
+            tickers = tickers[:5]
+        prices = download_prices(tickers, config["start"], date.today().isoformat())
+        returns = calculate_returns(prices)
+        rf = load_risk_free(config["start"], date.today().isoformat())
+        Path("data/processed").mkdir(parents=True, exist_ok=True)
+        returns.to_parquet("data/processed/returns.parquet")
+        store_frame(prices, "prices")
+        store_frame(returns, "returns")
+        store_frame(rf.to_frame(), "risk_free")
+        summary = pd.DataFrame({
+            "rows": [len(prices)],
+            "start": [prices.index.min()],
+            "end": [prices.index.max()],
+            "missing_values": [int(prices.isna().sum().sum())],
+            "assets": [len(prices.columns)],
+        })
+        Path("results").mkdir(exist_ok=True)
+        summary.to_csv("results/data_quality.csv", index=False)
+        logging.getLogger(__name__).info("Saved %d rows for %d assets", len(prices), len(prices.columns))
+    else:
+        logging.getLogger(__name__).info("Stage '%s' is not implemented yet.", args.stage)
 
 
 if __name__ == "__main__":

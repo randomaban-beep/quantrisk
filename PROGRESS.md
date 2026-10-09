@@ -1,6 +1,6 @@
 # Progress
 
-- [ ] Stage 0: Setup
+- [x] Stage 0: Setup
 - [ ] Stage 1: Data layer and DuckDB
 - [ ] Stage 2: Estimators and portfolio optimizers
 - [ ] Stage 3: Walk-forward backtest and metrics
@@ -11,10 +11,14 @@
 
 ## Decisions
 - Stage 0: The workspace was empty. Python project follows the supplied layout.
-- Stage 0: Git requires a safe-directory exception in this sandbox because the workspace owner differs from the execution identity; project-local identity is configured after adding that exception for commands.
+- Stage 0: Git requires a safe-directory exception in this sandbox because the workspace owner differs from the execution identity; configured project identity is randomaban-beep / GitHub noreply.
+- Stage 0: Initial push succeeded to origin/main. The bundled Python runtime lacks scipy and other declared packages; runtime install or a prepared environment will be needed for full validation.
 
 ## Known issues
-- Git remote push has not been attempted yet; sandbox ownership/network/authentication may require user action.
+- Stage 1 is not complete: the data CLI, parquet cache, quality summary, and DuckDB loader exist, but a dev run downloaded only 4 of 5 tickers; IWM failed. No full-universe run or reportable backtest is available.
+- Stage 2 is not complete: estimators and core allocators exist, but analytics helpers, specified optimizer tests, and validation remain.
+- Tests currently pass (2 tests) and Ruff is clean in `.venv312`; test coverage is only for data cleaning and return calculation.
+- Push pending: implementation changes are not yet committed/pushed.
 
 ## Next exact step
-Complete Stage 0 scaffold, commit it, and attempt the required push.
+Resolve the partial IWM download with a real-data retry, validate all 12 tickers, finish Stage 1, and push its commit.
