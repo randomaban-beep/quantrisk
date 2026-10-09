@@ -10,6 +10,8 @@ from quantrisk.backtest import run_backtest, turnover_cost
 from quantrisk.data import calculate_returns, clean_prices
 from quantrisk.metrics import performance_metrics
 from quantrisk.optimizers import portfolio_analytics, portfolio_weights
+from quantrisk.var_backtests import christoffersen_independence, kupiec_pof
+from quantrisk.var_models import component_var, forecast_window, rolling_forecasts
 
 
 def test_clean_prices_fills_short_gaps_and_sorts() -> None:
@@ -152,6 +154,61 @@ def test_metrics_on_known_daily_series() -> None:
     result = performance_metrics(daily, annualization=4)
     assert result["max_drawdown"] == pytest.approx(-0.02)
     assert result["volatility"] == pytest.approx(daily.std(ddof=1) * 2)
+
+
+def test_historical_var_matches_empirical_quantile() -> None:
+    history = pd.DataFrame({"A": [-0.04, -0.02, 0.0, 0.01, 0.03]})
+    forecast = forecast_window(history, pd.Series({"A": 1.0}), (0.8,))
+    assert forecast[("historical", 0.8)][0] == pytest.approx(-np.quantile(history.A, 0.2))
+
+
+def test_parametric_var_matches_normal_analytical_value() -> None:
+    rng = np.random.default_rng(19)
+    values = rng.normal(0.0, 0.01, 50000)
+    history = pd.DataFrame({"A": values})
+    forecast = forecast_window(history, pd.Series({"A": 1.0}), (0.99,))
+    expected = 2.326347874 * 0.01
+    assert forecast[("gaussian", 0.99)][0] == pytest.approx(expected, rel=0.10)
+
+
+def test_kupiec_and_christoffersen_detect_coverage_and_clustering() -> None:
+    correct = np.tile([True] + [False] * 19, 50)
+    wrong = np.tile([True] * 5 + [False] * 15, 50)
+    _, correct_p = kupiec_pof(correct, 0.95)
+    _, wrong_p = kupiec_pof(wrong, 0.95)
+    assert correct_p > 0.05
+    assert wrong_p < 0.05
+    clustered = np.tile([True] * 5 + [False] * 95, 10)
+    _, independent_p = christoffersen_independence(clustered)
+    assert independent_p < 0.05
+
+
+def test_component_var_sums_to_portfolio_var() -> None:
+    rng = np.random.default_rng(23)
+    history = pd.DataFrame(rng.normal(size=(1000, 3)) * [0.01, 0.02, 0.03], columns=list("ABC"))
+    weights = pd.Series([0.3, 0.4, 0.3], index=history.columns)
+    parts = component_var(weights, history)
+    ewma_cov = np.zeros((3, 3))
+    for row in history.to_numpy():
+        ewma_cov = 0.94 * ewma_cov + 0.06 * np.outer(row, row)
+    expected_total = 2.326347874 * np.sqrt(weights.to_numpy() @ ewma_cov @ weights.to_numpy())
+    assert parts.component_var.sum() == pytest.approx(expected_total, rel=1e-10)
+    assert parts.risk_contribution_pct.sum() == pytest.approx(1.0)
+
+
+def test_var_forecast_does_not_use_realized_day_return() -> None:
+    rng = np.random.default_rng(25)
+    index = pd.bdate_range("2024-01-01", periods=80)
+    history = pd.DataFrame(rng.normal(0, 0.01, (80, 2)), index=index, columns=["A", "B"])
+    holdings = pd.DataFrame(0.5, index=index, columns=["A", "B"])
+    changed = history.copy()
+    changed.iloc[50, 0] = -0.5
+    first = rolling_forecasts(history, holdings, window=30)
+    second = rolling_forecasts(changed, holdings, window=30)
+    forecast_date = index[50]
+    left = first[first.date == forecast_date].drop(columns="realized").reset_index(drop=True)
+    right = second[second.date == forecast_date].drop(columns="realized").reset_index(drop=True)
+    pd.testing.assert_frame_equal(left, right)
 
 
 def test_portfolio_analytics_effective_count_and_classes() -> None:

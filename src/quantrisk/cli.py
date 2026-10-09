@@ -15,6 +15,8 @@ from quantrisk.data import MissingTickersError, calculate_returns, download_pric
 from quantrisk.db import store_frame
 from quantrisk.metrics import performance_metrics
 from quantrisk.optimizers import portfolio_weights
+from quantrisk.var_backtests import summarize_var, traffic_light
+from quantrisk.var_models import component_var, rolling_forecasts
 
 
 def main() -> None:
@@ -106,6 +108,46 @@ def main() -> None:
         targets.index.name = "asset"
         targets.to_csv("results/portfolio_weights_latest.csv")
         logging.getLogger(__name__).info("Backtest saved for %d strategies", len(outputs["returns_net"].columns))
+    elif args.stage == "risk":
+        returns = pd.read_parquet("data/processed/returns.parquet")
+        nav = pd.read_parquet("results/returns_gross.parquet")
+        weight_rows = pd.read_parquet("results/weights.parquet")
+        settings = yaml.safe_load(Path("config/risk.yaml").read_text(encoding="utf-8"))
+        if args.dev:
+            returns = returns.tail(756).iloc[:, :5]
+        forecast_frames = []
+        traffic_frames = []
+        for strategy in nav.columns:
+            drifted = weight_rows[(weight_rows.strategy == strategy) & (weight_rows.weight_type == "drifted")]
+            close_weights = drifted.pivot(index="date", columns="asset", values="weight")
+            held = close_weights.reindex(returns.index).ffill().shift(1).fillna(0.0)
+            forecasts = rolling_forecasts(
+                returns, held, int(settings["window"]), tuple(settings["confidence_levels"]), float(settings["ewma_lambda"])
+            )
+            if forecasts.empty:
+                continue
+            forecasts.insert(1, "strategy", strategy)
+            forecast_frames.append(forecasts)
+            tail = forecasts[forecasts.confidence == 0.99].set_index("date")
+            zones = traffic_light(tail["realized"] < -tail["var"], 250)
+            traffic_frames.append(pd.DataFrame({"date": zones.index, "strategy": strategy, "zone": zones.astype("string").values}))
+        if forecast_frames:
+            forecasts = pd.concat(forecast_frames, ignore_index=True)
+            Path("results").mkdir(exist_ok=True)
+            forecasts.to_parquet("results/var_forecasts.parquet", index=False)
+            summary = summarize_var(forecasts, float(settings["significance"]))
+            summary.to_csv("results/var_backtest_summary.csv", index=False)
+            ranking = summary.groupby("strategy").agg(passed=("kupiec_pass", "sum"), models=("model", "count")).sort_values("passed", ascending=False)
+            ranking.to_csv("results/var_model_ranking.csv")
+            pd.concat(traffic_frames, ignore_index=True).to_csv("results/basel_traffic_light.csv", index=False)
+            latest = pd.read_csv("results/portfolio_weights_latest.csv", index_col="asset")
+            components = []
+            for strategy in latest.columns:
+                part = component_var(latest[strategy], returns.tail(int(settings["window"])))
+                part.insert(0, "strategy", strategy)
+                components.append(part)
+            pd.concat(components, ignore_index=True).to_csv("results/component_risk_latest.csv", index=False)
+            logging.getLogger(__name__).info("Saved VaR forecasts for %d strategies", len(forecast_frames))
     else:
         logging.getLogger(__name__).info("Stage '%s' is not implemented yet.", args.stage)
 
