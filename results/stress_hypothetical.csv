@@ -24,11 +24,11 @@ max_sharpe,Rates +200bp,"illustrative assumption, not a forecast",-0.04000000000
 max_sharpe,Stagflation,"illustrative assumption, not a forecast",-0.17244829803532413,SPY:-0.0800;IEF:-0.0480;QQQ:-0.0222
 max_sharpe,Credit spread blowout,"illustrative assumption, not a forecast",0.0,SPY:0.0000;QQQ:0.0000;IWM:0.0000
 max_sharpe,Flight to quality,"illustrative assumption, not a forecast",-0.06866897882119447,SPY:-0.0600;IEF:0.0240;EFA:-0.0167
-risk_parity,Equity crash,"illustrative assumption, not a forecast",-0.1790758082260861,SPY:-0.0553;QQQ:-0.0496;EFA:-0.0474
-risk_parity,Rates +200bp,"illustrative assumption, not a forecast",-0.04000000000000001,IEF:-0.0400;SPY:0.0000;QQQ:0.0000
-risk_parity,Stagflation,"illustrative assumption, not a forecast",-0.17686949298357496,IEF:-0.0480;SPY:-0.0369;EFA:-0.0316
+risk_parity,Equity crash,"illustrative assumption, not a forecast",-0.17839041565086627,SPY:-0.0564;EFA:-0.0487;QQQ:-0.0473
+risk_parity,Rates +200bp,"illustrative assumption, not a forecast",-0.03999999999999218,IEF:-0.0400;SPY:0.0000;QQQ:0.0000
+risk_parity,Stagflation,"illustrative assumption, not a forecast",-0.17653975053390025,IEF:-0.0480;SPY:-0.0376;EFA:-0.0325
 risk_parity,Credit spread blowout,"illustrative assumption, not a forecast",0.0,SPY:0.0000;QQQ:0.0000;IWM:0.0000
-risk_parity,Flight to quality,"illustrative assumption, not a forecast",-0.07372797585623014,SPY:-0.0276;IWM:-0.0241;IEF:0.0240
+risk_parity,Flight to quality,"illustrative assumption, not a forecast",-0.07348349656984453,SPY:-0.0282;EFA:-0.0244;IEF:0.0240
 hrp,Equity crash,"illustrative assumption, not a forecast",-0.18085274708112503,IWM:-0.0605;SPY:-0.0501;QQQ:-0.0489
 hrp,Rates +200bp,"illustrative assumption, not a forecast",-0.04000000000000001,IEF:-0.0400;SPY:0.0000;QQQ:0.0000
 hrp,Stagflation,"illustrative assumption, not a forecast",-0.17756246982771884,IEF:-0.0480;IWM:-0.0380;SPY:-0.0334

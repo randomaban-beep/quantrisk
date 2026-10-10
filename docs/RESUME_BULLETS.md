@@ -3,7 +3,7 @@
 - Built and compared 7 long-only portfolio strategies with delayed walk-forward execution, drift-aware weights, and turnover costs across 5 ETFs.
 - Produced a dev-scope net Sharpe range of 0.67–0.85; equal_weight led this sample. Results are exploratory and not evidence of future outperformance.
 - Implemented four VaR models at two confidence levels with Kupiec and Christoffersen tests; fhs had the highest Kupiec pass share (100%).
-- Analyzed 5 historical and 5 illustrative stress scenarios; automated QA collected 23 tests (22 passed, 1 failed).
+- Analyzed 5 historical and 5 illustrative stress scenarios; automated QA collected 23 tests (23 passed, 0 failed).
 
 Repository: https://github.com/randomaban-beep/quantrisk
 

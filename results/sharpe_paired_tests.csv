@@ -3,11 +3,11 @@ sixty_forty,equal_weight,0.3364,False,not statistically significant
 inverse_vol,equal_weight,0.3428,False,not statistically significant
 min_variance,equal_weight,0.76,False,not statistically significant
 max_sharpe,equal_weight,0.3668,False,not statistically significant
-risk_parity,equal_weight,0.486,False,not statistically significant
+risk_parity,equal_weight,0.472,False,not statistically significant
 hrp,equal_weight,0.4448,False,not statistically significant
 equal_weight,sixty_forty,0.3364,False,not statistically significant
 inverse_vol,sixty_forty,0.9672,False,not statistically significant
 min_variance,sixty_forty,0.9448,False,not statistically significant
 max_sharpe,sixty_forty,0.6464,False,not statistically significant
-risk_parity,sixty_forty,0.8912,False,not statistically significant
+risk_parity,sixty_forty,0.9284,False,not statistically significant
 hrp,sixty_forty,0.9496,False,not statistically significant

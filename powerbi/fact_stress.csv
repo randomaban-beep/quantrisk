@@ -24,11 +24,11 @@ max_sharpe,2011 Euro-crisis selloff,2011-07-22,2011-10-03,-0.0737097513364427,-0
 max_sharpe,Q4 2018 selloff,2018-09-20,2018-12-24,-0.1013728622899597,-0.10641375039583,,historical,,,
 max_sharpe,COVID crash,2020-02-19,2020-03-23,-0.1813078994664377,-0.1838103943535101,,historical,,,
 max_sharpe,2022 rates and inflation shock,2022-01-03,2022-10-14,-0.2202277597621488,-0.2203607220765886,,historical,,,
-risk_parity,Global Financial Crisis,2008-09-01,2009-03-09,-0.2846319102279762,-0.2824990128377251,,historical,,,
-risk_parity,2011 Euro-crisis selloff,2011-07-22,2011-10-03,-0.0882396449279258,-0.0936147087060768,,historical,,,
-risk_parity,Q4 2018 selloff,2018-09-20,2018-12-24,-0.1104851234859963,-0.115878537429473,,historical,,,
-risk_parity,COVID crash,2020-02-19,2020-03-23,-0.1899520308701835,-0.1925466975610994,,historical,,,
-risk_parity,2022 rates and inflation shock,2022-01-03,2022-10-14,-0.2256728146632656,-0.2266688731069066,,historical,,,
+risk_parity,Global Financial Crisis,2008-09-01,2009-03-09,-0.2846995756849895,-0.2825520904312003,,historical,,,
+risk_parity,2011 Euro-crisis selloff,2011-07-22,2011-10-03,-0.0884717297669627,-0.0935632427319737,,historical,,,
+risk_parity,Q4 2018 selloff,2018-09-20,2018-12-24,-0.1099985060582131,-0.1153939499046067,,historical,,,
+risk_parity,COVID crash,2020-02-19,2020-03-23,-0.1900860053697421,-0.1926530796740235,,historical,,,
+risk_parity,2022 rates and inflation shock,2022-01-03,2022-10-14,-0.2252312830624836,-0.2261994740965158,,historical,,,
 hrp,Global Financial Crisis,2008-09-01,2009-03-09,-0.2874034297559519,-0.2855848772962579,,historical,,,
 hrp,2011 Euro-crisis selloff,2011-07-22,2011-10-03,-0.0913497822437783,-0.0960546993017158,,historical,,,
 hrp,Q4 2018 selloff,2018-09-20,2018-12-24,-0.1141238497186356,-0.1194548806813348,,historical,,,
@@ -59,11 +59,11 @@ max_sharpe,Rates +200bp,,,,,,hypothetical,"illustrative assumption, not a foreca
 max_sharpe,Stagflation,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.1724482980353241,SPY:-0.0800;IEF:-0.0480;QQQ:-0.0222
 max_sharpe,Credit spread blowout,,,,,,hypothetical,"illustrative assumption, not a forecast",0.0,SPY:0.0000;QQQ:0.0000;IWM:0.0000
 max_sharpe,Flight to quality,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.0686689788211944,SPY:-0.0600;IEF:0.0240;EFA:-0.0167
-risk_parity,Equity crash,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.1790758082260861,SPY:-0.0553;QQQ:-0.0496;EFA:-0.0474
-risk_parity,Rates +200bp,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.04,IEF:-0.0400;SPY:0.0000;QQQ:0.0000
-risk_parity,Stagflation,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.1768694929835749,IEF:-0.0480;SPY:-0.0369;EFA:-0.0316
+risk_parity,Equity crash,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.1783904156508662,SPY:-0.0564;EFA:-0.0487;QQQ:-0.0473
+risk_parity,Rates +200bp,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.0399999999999921,IEF:-0.0400;SPY:0.0000;QQQ:0.0000
+risk_parity,Stagflation,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.1765397505339002,IEF:-0.0480;SPY:-0.0376;EFA:-0.0325
 risk_parity,Credit spread blowout,,,,,,hypothetical,"illustrative assumption, not a forecast",0.0,SPY:0.0000;QQQ:0.0000;IWM:0.0000
-risk_parity,Flight to quality,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.0737279758562301,SPY:-0.0276;IWM:-0.0241;IEF:0.0240
+risk_parity,Flight to quality,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.0734834965698445,SPY:-0.0282;EFA:-0.0244;IEF:0.0240
 hrp,Equity crash,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.180852747081125,IWM:-0.0605;SPY:-0.0501;QQQ:-0.0489
 hrp,Rates +200bp,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.04,IEF:-0.0400;SPY:0.0000;QQQ:0.0000
 hrp,Stagflation,,,,,,hypothetical,"illustrative assumption, not a forecast",-0.1775624698277188,IEF:-0.0480;IWM:-0.0380;SPY:-0.0334

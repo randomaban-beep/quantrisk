@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage
-from scipy.optimize import minimize
+from scipy.optimize import least_squares, minimize
 from scipy.spatial.distance import squareform
 
 from quantrisk.estimators import covariance, expected_returns
@@ -100,17 +100,52 @@ def portfolio_weights(
     elif strategy == "hrp":
         weights = _hrp(window, cap)
     else:
-        cov = covariance(window, covariance_method).to_numpy()
+        cov_frame = (
+            window.cov()
+            if strategy == "risk_parity"
+            else covariance(window, covariance_method)
+        )
+        cov = cov_frame.to_numpy()
         mu = expected_returns(window, mu_shrinkage).to_numpy()
         if strategy == "min_variance":
             objective = lambda w: float(w @ cov @ w)
         elif strategy == "max_sharpe":
             objective = lambda w: -float((w @ mu - risk_free) / np.sqrt(max(w @ cov @ w, 1e-15)))
         elif strategy == "risk_parity":
+            # Solve relative variance-contribution equalities in log-weight
+            # coordinates. The softmax enforces positive, fully invested weights
+            # and avoids the poor finite-difference scaling of SLSQP near the
+            # small absolute variance values typical of daily returns.
+            def weights_from_log_ratios(log_ratios: np.ndarray) -> np.ndarray:
+                logits = np.append(log_ratios, 0.0)
+                logits -= logits.max()
+                exp_logits = np.exp(logits)
+                return exp_logits / exp_logits.sum()
+
+            def risk_parity_residual(log_ratios: np.ndarray) -> np.ndarray:
+                w = weights_from_log_ratios(log_ratios)
+                variance_contrib = np.maximum(w * (cov @ w), 1e-30)
+                log_rc = np.log(variance_contrib)
+                return log_rc[:-1] - log_rc[-1]
+
+            solution = least_squares(
+                risk_parity_residual,
+                np.log(np.maximum(inv_vol[:-1], 1e-15) / max(inv_vol[-1], 1e-15)),
+                xtol=1e-14,
+                ftol=1e-14,
+                gtol=1e-14,
+                max_nfev=2000,
+            )
+            parity_weights = weights_from_log_ratios(solution.x)
+            if solution.success and parity_weights.max() <= cap + 1e-10:
+                return pd.Series(parity_weights, index=assets, name=strategy)
+
+            # If an unconstrained solution violates the cap, solve on the capped
+            # simplex using SLSQP as the constrained fallback.
             def objective(w: np.ndarray) -> float:
-                variance_contrib = np.maximum(w * (cov @ w), 1e-15)
-                rc = variance_contrib / variance_contrib.sum()
-                return float(np.square(rc - 1.0 / n_assets).sum())
+                variance_contrib = np.maximum(w * (cov @ w), 1e-30)
+                centered = np.log(variance_contrib) - np.log(variance_contrib).mean()
+                return float(centered @ centered)
         else:
             raise ValueError(f"Unknown strategy: {strategy}")
         result = minimize(
