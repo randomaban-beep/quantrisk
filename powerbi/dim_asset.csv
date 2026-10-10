@@ -1,0 +1,13 @@
+asset_id,ticker,asset_class
+SPY,SPY,us_equity
+QQQ,QQQ,us_equity
+IWM,IWM,us_equity
+EFA,EFA,international_equity
+EEM,EEM,international_equity
+IEF,IEF,treasuries
+TLT,TLT,treasuries
+LQD,LQD,investment_grade_credit
+HYG,HYG,high_yield_credit
+VNQ,VNQ,real_estate
+GLD,GLD,gold
+DBC,DBC,commodities

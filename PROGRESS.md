@@ -6,7 +6,7 @@
 - [x] Stage 3: Walk-forward backtest and metrics
 - [x] Stage 4: Risk engine and VaR backtests
 - [x] Stage 5: Stress, stats, and sensitivity
-- [ ] Stage 6: Visuals, SQL, report, dashboard, Power BI
+- [x] Stage 6: Visuals, SQL, report, dashboard, Power BI
 - [ ] Stage 7: Final QA and resume materials
 
 ## Decisions
@@ -15,6 +15,8 @@
 - Stage 0: Initial push succeeded to origin/main. The bundled Python runtime lacks scipy and other declared packages; runtime install or a prepared environment will be needed for full validation.
 - Stage 1: IWM recovered from Yahoo within the two-attempt cap; Stooq is implemented as its fallback. No IJR swap was needed. Full universe data currently contains 12 tickers, 4,871 price rows, no missing values, returns, rf table, and DuckDB tables.
 - Stage 5: Correlation scenarios raise each estimated off-diagonal correlation to at least the configured floor while preserving each asset's volatility.
+- Stage 6: Dev analytics use the latest 756 dates and five assets for backtest/risk; historical static-weight stress and figures can use the full saved panel.
+- Stage 6: All 12 figures render at 150 dpi; SQL exports six query outputs; Power BI exports ten CSV tables plus a schema guide; report and README are generated from saved result files.
 
 ## Known issues
 - Stage 2 implementation is committed with the risk-parity limitation below; it remains unchecked pending that criterion.
@@ -23,6 +25,7 @@
 - Stage 3 includes close-of-day execution, next-day exposure, cost deduction, weights drift, gross/net return streams, NAV, and core metrics. Dedicated no-look-ahead, drift, cost, NAV, and hand-series metrics checks pass.
 - Stage 4 dev run generated 500-day-window VaR/ES for four models and two confidence levels, formal coverage summaries, rolling Basel zones, and component VaR. Dedicated VaR model, backtest, decomposition, and no-look-ahead checks pass.
 - Stage 3 dev realized backtest covers 2023-present and five ETFs; earlier historical scenario realized-return fields are unavailable (static-weight replays are calculated).
+- Dashboard startup was verified with Streamlit on localhost. Power BI table join keys were checked and have no missing values.
 
 ## Next exact step
-Implement Stage 6 plots, SQL analytics, automated report, dashboard, and Power BI exports.
+Run final clean-clone-style `make all` dev workflow, complete resume/GitHub interview materials, then verify repository status and push Stage 7.

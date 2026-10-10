@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -13,8 +15,11 @@ import yaml
 from quantrisk.backtest import run_backtest
 from quantrisk.data import MissingTickersError, calculate_returns, download_prices, load_risk_free
 from quantrisk.db import store_frame
+from quantrisk.exports import export_powerbi
 from quantrisk.metrics import performance_metrics
 from quantrisk.optimizers import portfolio_weights
+from quantrisk.plots import make_figures
+from quantrisk.report import build_report
 from quantrisk.sensitivity import run_sensitivity
 from quantrisk.stats import stationary_bootstrap
 from quantrisk.stress import correlation_stress, historical_stress, hypothetical_stress
@@ -29,13 +34,19 @@ def main() -> None:
     run = subparsers.add_parser("run")
     run.add_argument(
         "--stage",
-        choices=("data", "portfolios", "risk", "stress", "sensitivity", "report", "all"),
+        choices=("data", "portfolios", "risk", "stress", "sensitivity", "sql", "report", "all"),
         default="all",
     )
     run.add_argument("--dev", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
-    if args.stage == "data":
+    if args.stage == "all":
+        for stage in ("data", "portfolios", "risk", "stress", "sensitivity", "sql", "report"):
+            command = [sys.executable, "-m", "quantrisk.cli", "run", "--stage", stage]
+            if args.dev:
+                command.append("--dev")
+            subprocess.run(command, check=True)
+    elif args.stage == "data":
         config = yaml.safe_load(Path("config/universe.yaml").read_text(encoding="utf-8"))
         configured = config["tickers"]
         tickers = list(configured)
@@ -215,6 +226,45 @@ def main() -> None:
             config["estimation_window"] = min(252, len(returns) // 2)
         run_sensitivity(returns, config).to_csv("results/sensitivity.csv", index=False)
         logging.getLogger(__name__).info("Saved cached sensitivity runs")
+    elif args.stage == "sql":
+        import duckdb
+
+        root = Path("results")
+        nav = pd.read_parquet(root / "nav.parquet")
+        returns = pd.read_parquet(root / "returns_net.parquet")
+        weights = pd.read_parquet(root / "weights.parquet")
+        asset_returns = pd.read_parquet("data/processed/returns.parquet")
+        var = pd.read_parquet(root / "var_forecasts.parquet")
+        turnover = pd.read_csv(root / "turnover.csv", parse_dates=["date"]).melt(id_vars="date", var_name="strategy", value_name="turnover")
+        costs = pd.read_csv(root / "costs.csv", parse_dates=["date"]).melt(id_vars="date", var_name="strategy", value_name="cost")
+        turnover_costs = turnover.merge(costs, on=["date", "strategy"])
+        db_path = Path("data/quant.duckdb")
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        with duckdb.connect(str(db_path)) as conn:
+            for name, frame in {
+                "daily_nav": nav.rename_axis("date").reset_index().melt(id_vars="date", var_name="strategy", value_name="nav"),
+                "strategy_returns": returns.rename_axis("date").reset_index().melt(id_vars="date", var_name="strategy", value_name="return_net"),
+                "daily_weights": weights[weights.weight_type == "drifted"].rename(columns={"asset": "asset"}),
+                "asset_returns": asset_returns.rename_axis("date").reset_index().melt(id_vars="date", var_name="asset", value_name="asset_return"),
+                "var_forecasts": var,
+                "subperiods": pd.read_csv(root / "subperiods.csv"),
+                "turnover_costs": turnover_costs,
+            }.items():
+                conn.register("input_frame", frame)
+                conn.execute(f'CREATE OR REPLACE TABLE "{name}" AS SELECT * FROM input_frame')
+                conn.unregister("input_frame")
+            output_dir = root / "sql"
+            output_dir.mkdir(exist_ok=True)
+            for query_path in sorted(Path("sql").glob("*.sql")):
+                query = conn.execute(query_path.read_text(encoding="utf-8")).df()
+                query.to_csv(output_dir / f"{query_path.stem}.csv", index=False)
+        logging.getLogger(__name__).info("Executed six SQL analytics queries")
+    elif args.stage == "report":
+        returns = pd.read_parquet("data/processed/returns.parquet")
+        make_figures(returns=returns)
+        export_powerbi()
+        build_report()
+        logging.getLogger(__name__).info("Generated figures, report, README, and Power BI tables")
     else:
         logging.getLogger(__name__).info("Stage '%s' is not implemented yet.", args.stage)
 

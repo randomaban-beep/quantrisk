@@ -1,6 +1,7 @@
 .PHONY: setup data backtest risk stress sensitivity report sql dashboard test lint all dev
 setup:
 	python -m pip install -r requirements.txt
+	python -m pip install -e .
 data:
 	python -m quantrisk.cli run --stage data
 backtest:
@@ -14,7 +15,7 @@ sensitivity:
 report:
 	python -m quantrisk.cli run --stage report
 sql:
-	python -m quantrisk.cli run --stage all
+	python -m quantrisk.cli run --stage sql
 dashboard:
 	streamlit run app/dashboard.py
 test:
