@@ -27,6 +27,14 @@ from quantrisk.var_backtests import summarize_var, traffic_light
 from quantrisk.var_models import component_var, rolling_forecasts
 
 
+def _development_assets(available: list[str]) -> list[str]:
+    """Select five representative ETFs, including SPY and IEF when available."""
+    preferred = ["SPY", "QQQ", "IWM" if "IWM" in available else "IJR", "EFA", "IEF"]
+    selected = [asset for asset in preferred if asset in available]
+    selected.extend(asset for asset in available if asset not in selected and len(selected) < 5)
+    return selected
+
+
 def main() -> None:
     """Parse arguments and dispatch a project stage."""
     parser = argparse.ArgumentParser(prog="quantrisk")
@@ -51,7 +59,7 @@ def main() -> None:
         configured = config["tickers"]
         tickers = list(configured)
         if args.dev:
-            tickers = tickers[:5]
+            tickers = _development_assets(tickers)
         try:
             prices = download_prices(tickers, config["start"], date.today().isoformat())
         except MissingTickersError as exc:
@@ -91,7 +99,7 @@ def main() -> None:
         Path("results").mkdir(exist_ok=True)
         if args.dev:
             config["estimation_window"] = min(252, len(returns) // 2)
-            returns = returns.tail(756).iloc[:, :5]
+            returns = returns.tail(756).reindex(columns=_development_assets(list(returns.columns)))
         rf_path = Path("data/raw/rf.parquet")
         rf = pd.read_parquet(rf_path).iloc[:, 0] if rf_path.exists() else None
         outputs = run_backtest(returns, config, rf)
@@ -128,7 +136,7 @@ def main() -> None:
         weight_rows = pd.read_parquet("results/weights.parquet")
         settings = yaml.safe_load(Path("config/risk.yaml").read_text(encoding="utf-8"))
         if args.dev:
-            returns = returns.tail(756).iloc[:, :5]
+            returns = returns.tail(756).reindex(columns=_development_assets(list(returns.columns)))
         forecast_frames = []
         traffic_frames = []
         for strategy in nav.columns:
@@ -222,7 +230,7 @@ def main() -> None:
         returns = pd.read_parquet("data/processed/returns.parquet")
         config = yaml.safe_load(Path("config/backtest.yaml").read_text(encoding="utf-8"))
         if args.dev:
-            returns = returns.tail(756).iloc[:, :5]
+            returns = returns.tail(756).reindex(columns=_development_assets(list(returns.columns)))
             config["estimation_window"] = min(252, len(returns) // 2)
         run_sensitivity(returns, config).to_csv("results/sensitivity.csv", index=False)
         logging.getLogger(__name__).info("Saved cached sensitivity runs")

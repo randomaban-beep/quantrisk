@@ -16,6 +16,9 @@
 - Stage 1: IWM recovered from Yahoo within the two-attempt cap; Stooq is implemented as its fallback. No IJR swap was needed. Full universe data currently contains 12 tickers, 4,871 price rows, no missing values, returns, rf table, and DuckDB tables.
 - Stage 5: Correlation scenarios raise each estimated off-diagonal correlation to at least the configured floor while preserving each asset's volatility.
 - Stage 6: Dev analytics use the latest 756 dates and five assets for backtest/risk; historical static-weight stress and figures can use the full saved panel.
+- Stage 7: The ordered `--stage all --dev` CLI workflow completed from cached real market data. GNU `make` is unavailable in this Windows environment, so Makefile targets could not be invoked directly.
+- Stage 7: Resume bullets, LinkedIn summary, GitHub setup, topic command, and six interview Q&As were generated from saved results and QA counts.
+- Stage 7: The five-asset dev universe includes SPY, IWM (or IJR fallback), and IEF so the 60/40 benchmark has both legs.
 - Stage 6: All 12 figures render at 150 dpi; SQL exports six query outputs; Power BI exports ten CSV tables plus a schema guide; report and README are generated from saved result files.
 
 ## Known issues
@@ -26,6 +29,21 @@
 - Stage 4 dev run generated 500-day-window VaR/ES for four models and two confidence levels, formal coverage summaries, rolling Basel zones, and component VaR. Dedicated VaR model, backtest, decomposition, and no-look-ahead checks pass.
 - Stage 3 dev realized backtest covers 2023-present and five ETFs; earlier historical scenario realized-return fields are unavailable (static-weight replays are calculated).
 - Dashboard startup was verified with Streamlit on localhost. Power BI table join keys were checked and have no missing values.
+- Full suite result: 22 passed, 1 failed. The remaining failure is the previously documented risk-parity contribution spread (1.36% versus the specified 1%). `make all` from a clean clone was not directly verified; only the complete CLI dev sequence ran.
 
 ## Next exact step
-Run final clean-clone-style `make all` dev workflow, complete resume/GitHub interview materials, then verify repository status and push Stage 7.
+Review the risk-parity limitation and run the clean-clone `make all` validation in an environment with GNU make; then check off Stage 2/7 if all required tests pass.
+
+## Stage 7 QA checklist
+
+- [ ] `make all` from clean clone completes (GNU make unavailable; CLI dev sequence passed)
+- [ ] Full `make test` passes (22 passed, one risk-parity failure); `make lint` equivalent passes
+- [x] No-look-ahead tests for weights and VaR pass
+- [x] All seven strategies produce bounded, fully invested weights in the dev backtest
+- [x] README and report figures/metrics are generated from saved result files
+- [x] Twelve figures exist and render; dashboard starts; Power BI join keys are non-null
+- [x] Limitations are stated; caches and market data are gitignored; no tracked file exceeds 5 MB
+- [x] CI workflow exists and Ruff is clean
+- [ ] CI test job passes; blocked by the known risk-parity failure
+- [x] Stage commits are pushed and local main matches origin/main
+- [x] README contains CI badge, hero figure, and relative links

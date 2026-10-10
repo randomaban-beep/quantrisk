@@ -1,8 +1,8 @@
 strategy,passed,models
-equal_weight,7,8
-hrp,7,8
-inverse_vol,7,8
-max_sharpe,7,8
-risk_parity,7,8
-sixty_forty,7,8
-min_variance,6,8
+equal_weight,6,8
+hrp,6,8
+inverse_vol,6,8
+sixty_forty,6,8
+risk_parity,6,8
+min_variance,5,8
+max_sharpe,5,8

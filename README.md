@@ -12,21 +12,21 @@ Walk-forward portfolio construction with seven strategy families, transaction co
 
 | strategy | cagr | volatility | sharpe | max_drawdown | sortino | var_95 | cvar_95 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| equal_weight | 0.2127 | 0.1767 | 0.9577 | -0.1795 | 1.4240 | 0.0154 | 0.0239 |
-| sixty_forty | 0.2127 | 0.1767 | 0.9577 | -0.1795 | 1.4240 | 0.0154 | 0.0239 |
-| inverse_vol | 0.2165 | 0.1729 | 0.9930 | -0.1734 | 1.4809 | 0.0149 | 0.0234 |
-| min_variance | 0.2138 | 0.1622 | 1.0340 | -0.1482 | 1.5461 | 0.0136 | 0.0224 |
-| max_sharpe | 0.1951 | 0.1702 | 0.9017 | -0.1652 | 1.3334 | 0.0144 | 0.0242 |
-| risk_parity | 0.2167 | 0.1730 | 0.9932 | -0.1732 | 1.4806 | 0.0148 | 0.0234 |
-| hrp | 0.2152 | 0.1715 | 0.9936 | -0.1702 | 1.4863 | 0.0153 | 0.0232 |
+| equal_weight | 0.1606 | 0.1414 | 0.8468 | -0.1490 | 1.2565 | 0.0130 | 0.0191 |
+| sixty_forty | 0.1204 | 0.1050 | 0.7615 | -0.1072 | 1.1199 | 0.0095 | 0.0145 |
+| inverse_vol | 0.1245 | 0.1092 | 0.7701 | -0.1067 | 1.1312 | 0.0099 | 0.0149 |
+| min_variance | 0.1189 | 0.1000 | 0.7810 | -0.0860 | 1.1439 | 0.0089 | 0.0138 |
+| max_sharpe | 0.1093 | 0.1036 | 0.6739 | -0.0916 | 0.9833 | 0.0096 | 0.0144 |
+| risk_parity | 0.1246 | 0.1072 | 0.7831 | -0.1015 | 1.1516 | 0.0099 | 0.0146 |
+| hrp | 0.1218 | 0.1072 | 0.7597 | -0.0999 | 1.1164 | 0.0101 | 0.0146 |
 
 ## Headline findings
 
-- Best net Sharpe in the saved run: **min_variance** (1.034); worst: **max_sharpe** (0.902).
-- 8 VaR backtest rows reject Kupiec coverage at the configured significance threshold; fhs has the highest observed pass share.
-- The most adverse hypothetical scenario shown is Equity crash for equal_weight (-19.33%); shock values are assumptions, not forecasts.
+- Best net Sharpe in the saved run: **equal_weight** (0.847); worst: **max_sharpe** (0.674).
+- 16 VaR backtest rows reject Kupiec coverage at the configured significance threshold; fhs has the highest observed pass share.
+- The most adverse hypothetical scenario shown is Equity crash for equal_weight (-26.00%); shock values are assumptions, not forecasts.
 
-Saved backtest scope: 5 ETF assets, 2023-10-05 to 2026-10-09. The source price panel has 12 assets and covers 2007-06-01 to 2026-10-09.
+Saved backtest scope: 5 ETF assets, 2023-10-05 to 2026-10-09. The source price panel has 5 assets and covers 2007-06-01 to 2026-10-09.
 
 ## Architecture
 
@@ -51,6 +51,10 @@ make dashboard
 
 See `src/quantrisk`, `config`, `sql`, `app`, `results`, `figures`, and `powerbi`.
 
+## References
+
+See the [methodology references](docs/methodology.md#references).
+
 ## Methodology and limitations
 
 See [methodology](docs/methodology.md) and [the generated report](results/report.md). Limitations:
@@ -67,3 +71,5 @@ See [methodology](docs/methodology.md) and [the generated report](results/report
 ## How to talk about this project
 
 Explain the lagged walk-forward signal timing, covariance estimation choices, optimizer constraints, formal VaR coverage tests, and why a high backtest metric is not proof of future performance.
+
+Career and interview materials: [resume bullets](docs/RESUME_BULLETS.md), [GitHub setup and interview questions](docs/GITHUB_SETUP.md).

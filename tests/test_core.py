@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from quantrisk.backtest import run_backtest, turnover_cost
+from quantrisk.cli import _development_assets
 from quantrisk.data import calculate_returns, clean_prices
 from quantrisk.metrics import performance_metrics
 from quantrisk.optimizers import portfolio_analytics, portfolio_weights
@@ -23,6 +24,12 @@ def test_clean_prices_fills_short_gaps_and_sorts() -> None:
     assert result.index.is_monotonic_increasing
     assert not result.isna().any().any()
     assert result.loc["2020-01-02", "A"] == 1.0
+
+
+def test_dev_universe_includes_small_cap_and_treasury_benchmarks() -> None:
+    assets = _development_assets(["SPY", "QQQ", "IWM", "EFA", "EEM", "IEF", "TLT"])
+    assert len(assets) == 5
+    assert {"SPY", "IWM", "IEF"}.issubset(assets)
 
 
 def test_returns_are_simple_daily_returns() -> None:

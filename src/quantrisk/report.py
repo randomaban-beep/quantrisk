@@ -129,6 +129,10 @@ make dashboard
 
 See `src/quantrisk`, `config`, `sql`, `app`, `results`, `figures`, and `powerbi`.
 
+## References
+
+See the [methodology references](docs/methodology.md#references).
+
 ## Methodology and limitations
 
 See [methodology](docs/methodology.md) and [the generated report](results/report.md). Limitations:
@@ -141,6 +145,8 @@ See [methodology](docs/methodology.md) and [the generated report](results/report
 ## How to talk about this project
 
 Explain the lagged walk-forward signal timing, covariance estimation choices, optimizer constraints, formal VaR coverage tests, and why a high backtest metric is not proof of future performance.
+
+Career and interview materials: [resume bullets](docs/RESUME_BULLETS.md), [GitHub setup and interview questions](docs/GITHUB_SETUP.md).
 """
     Path("README.md").write_text(readme, encoding="utf-8")
     return report
